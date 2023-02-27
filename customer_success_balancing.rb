@@ -3,14 +3,17 @@ require 'timeout'
 
 # ruby-version 3.0.0p0
 class CustomerSuccessBalancing
-  def initialize(customer_success, customers, away_customer_success)
-    @customer_success = customer_success.sort_by { |cs| cs[:score] }
-    @customers = customers.sort_by { |customer| customer[:score] }
+  def initialize(customers_success, customers, away_customer_success)
+    @customers_success = customers_success
+    @customers = customers
     @away_customer_success = away_customer_success
   end
 
   def execute
-    @customers_amount_by_cs = calculate_customers_amount_by_cs
+    customers_success.sort_by! { |customer_success| customer_success[:score] }
+    customers.sort_by! { |customer| customer[:score] }
+
+    @customers_amount_by_cs = calculate_customers_amount_by_customer_success
 
     return 0 if customers_amount_by_cs.empty?
     return 0 if customer_success_with_most_customers.size > 1
@@ -20,9 +23,16 @@ class CustomerSuccessBalancing
 
   private
 
-  attr_reader :away_customer_success, :customer_success, :customers, :customers_amount_by_cs
+  attr_reader :away_customer_success, :customers, :customers_success, :customers_amount_by_cs
 
-  def calculate_customers_amount_by_cs
+  # excludes customer success that is absent or does not have enough score to serve customers
+  def allocable_customer_success
+    customers_success.reject do |customer_success|
+      away_customer_success.include?(customer_success[:id]) || customer_success[:score] < customers.first[:score]
+    end
+  end
+
+  def calculate_customers_amount_by_customer_success
     customers_index = 0
 
     allocable_customer_success.map do |customer_success|
@@ -40,20 +50,15 @@ class CustomerSuccessBalancing
   end
 
   def customer_success_with_most_customers
-    @customer_success_with_most_customers ||= customers_amount_by_cs.select do |cs|
-      cs[:customers_amount] == max_customers_amount_by_customer_success
+    @customer_success_with_most_customers ||= customers_amount_by_cs.select do |customer_success|
+      customer_success[:customers_amount] == max_customers_amount_by_customer_success
     end
   end
 
-  # excludes customer success that is absent or does not have enough score to serve customers
-  def allocable_customer_success
-    customer_success.reject { |cs| away_customer_success.include?(cs[:id]) || cs[:score] < customers.first[:score] }
-  end
-
   def max_customers_amount_by_customer_success
-    customer_success = customers_amount_by_cs.max_by { |cs| cs[:customers_amount] }
-
-    customer_success[:customers_amount]
+    customers_amount_by_cs.map do |customer_success|
+      customer_success[:customers_amount]
+    end.max
   end
 end
 
