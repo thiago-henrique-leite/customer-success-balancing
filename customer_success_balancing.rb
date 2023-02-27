@@ -56,7 +56,7 @@ class CustomerSuccessBalancing
   end
 
   def max_customers_amount_by_customer_success
-    customers_amount_by_cs.map do |customer_success|
+    @max_customers_amount_by_customer_success ||= customers_amount_by_cs.map do |customer_success|
       customer_success[:customers_amount]
     end.max
   end
