@@ -25,10 +25,9 @@ class CustomerSuccessBalancing
 
   attr_reader :away_customer_success, :customers, :customers_success, :customers_amount_by_cs
 
-  # excludes customer success that is absent or does not have enough score to serve customers
   def allocable_customer_success
     customers_success.reject do |customer_success|
-      away_customer_success.include?(customer_success[:id]) || customer_success[:score] < customers.first[:score]
+      customer_success_is_absent?(customer_success[:id]) || customer_success[:score] < lowest_customer_score
     end
   end
 
@@ -49,10 +48,18 @@ class CustomerSuccessBalancing
     end
   end
 
+  def customer_success_is_absent?(customer_success_id)
+    away_customer_success.include?(customer_success_id)
+  end
+
   def customer_success_with_most_customers
     @customer_success_with_most_customers ||= customers_amount_by_cs.select do |customer_success|
       customer_success[:customers_amount] == max_customers_amount_by_customer_success
     end
+  end
+
+  def lowest_customer_score
+    @lowest_customer_score ||= customers.first[:score]
   end
 
   def max_customers_amount_by_customer_success
