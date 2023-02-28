@@ -10,15 +10,16 @@ class CustomerSuccessBalancing
   end
 
   def execute
-    customers_success.sort_by! { |customer_success| customer_success[:score] }
-    customers.sort_by! { |customer| customer[:score] }
+    sort_by_score_in_ascending_order(customers)
+    sort_by_score_in_ascending_order(customers_success)
+
+    return 0 if allocable_customer_success.empty?
 
     @customers_amount_by_cs = calculate_customers_amount_by_customer_success
 
-    return 0 if customers_amount_by_cs.empty?
-    return 0 if customer_success_with_most_customers.size > 1
+    return 0 if customers_success_with_most_customers.size > 1
 
-    customer_success_with_most_customers.last[:customer_success_id]
+    customers_success_with_most_customers.last[:customer_success_id]
   end
 
   private
@@ -26,7 +27,7 @@ class CustomerSuccessBalancing
   attr_reader :away_customer_success, :customers, :customers_success, :customers_amount_by_cs
 
   def allocable_customer_success
-    customers_success.reject do |customer_success|
+    @allocable_customer_success ||= customers_success.reject do |customer_success|
       customer_success_is_absent?(customer_success[:id]) || customer_success[:score] < lowest_customer_score
     end
   end
@@ -52,8 +53,8 @@ class CustomerSuccessBalancing
     away_customer_success.include?(customer_success_id)
   end
 
-  def customer_success_with_most_customers
-    @customer_success_with_most_customers ||= customers_amount_by_cs.select do |customer_success|
+  def customers_success_with_most_customers
+    @customers_success_with_most_customers ||= customers_amount_by_cs.select do |customer_success|
       customer_success[:customers_amount] == max_customers_amount_by_customer_success
     end
   end
@@ -66,6 +67,10 @@ class CustomerSuccessBalancing
     @max_customers_amount_by_customer_success ||= customers_amount_by_cs.map do |customer_success|
       customer_success[:customers_amount]
     end.max
+  end
+
+  def sort_by_score_in_ascending_order(array)
+    array.sort_by! { |element| element[:score] }
   end
 end
 
