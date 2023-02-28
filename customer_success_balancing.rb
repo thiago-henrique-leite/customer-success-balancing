@@ -15,7 +15,7 @@ class CustomerSuccessBalancing
 
     return 0 if allocable_customer_success.empty?
 
-    @customers_amount_by_cs = calculate_customers_amount_by_customer_success
+    calculate_customers_amount_by_customer_success
 
     return 0 if customers_success_with_most_customers.size > 1
 
@@ -35,7 +35,7 @@ class CustomerSuccessBalancing
   def calculate_customers_amount_by_customer_success
     customers_index = 0
 
-    allocable_customer_success.map do |customer_success|
+    @customers_amount_by_cs = allocable_customer_success.map do |customer_success|
       customers_amount = 0
 
       customers[customers_index..].each do |customer|
