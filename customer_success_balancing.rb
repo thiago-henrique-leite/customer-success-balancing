@@ -139,6 +139,8 @@ class CustomerSuccessBalancingTests < Minitest::Test
     assert_equal 3, balancer.execute
   end
 
+  # test case with the maximum capacity of customers 🔥
+  # without this case the tests run in less than a tenth of a second
   def test_scenario_eight
     balancer = CustomerSuccessBalancing.new(
       build_scores(Array(1..999)),
