@@ -13,7 +13,7 @@ class CustomerSuccessBalancing
     sort_by_score_in_ascending_order(customers)
     sort_by_score_in_ascending_order(customers_success)
 
-    return 0 if allocable_customer_success.empty?
+    return 0 if allocable_customers_success.empty?
 
     calculate_customers_amount_by_customer_success
 
@@ -26,8 +26,8 @@ class CustomerSuccessBalancing
 
   attr_reader :away_customer_success, :customers, :customers_success, :customers_amount_by_cs
 
-  def allocable_customer_success
-    @allocable_customer_success ||= customers_success.reject do |customer_success|
+  def allocable_customers_success
+    @allocable_customers_success ||= customers_success.reject do |customer_success|
       customer_success_is_absent?(customer_success[:id]) || customer_success[:score] < lowest_customers_score
     end
   end
@@ -35,7 +35,7 @@ class CustomerSuccessBalancing
   def calculate_customers_amount_by_customer_success
     customers_index = 0
 
-    @customers_amount_by_cs = allocable_customer_success.map do |customer_success|
+    @customers_amount_by_cs = allocable_customers_success.map do |customer_success|
       customers_amount = 0
 
       customers[customers_index..].each do |customer|
