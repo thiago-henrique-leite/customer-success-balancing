@@ -28,7 +28,7 @@ class CustomerSuccessBalancing
 
   def allocable_customer_success
     @allocable_customer_success ||= customers_success.reject do |customer_success|
-      customer_success_is_absent?(customer_success[:id]) || customer_success[:score] < lowest_customer_score
+      customer_success_is_absent?(customer_success[:id]) || customer_success[:score] < lowest_customers_score
     end
   end
 
@@ -59,8 +59,8 @@ class CustomerSuccessBalancing
     end
   end
 
-  def lowest_customer_score
-    @lowest_customer_score ||= customers.first[:score]
+  def lowest_customers_score
+    @lowest_customers_score ||= customers.first[:score]
   end
 
   def max_customers_amount_by_customer_success
