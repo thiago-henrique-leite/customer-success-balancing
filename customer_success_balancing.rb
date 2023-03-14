@@ -34,6 +34,8 @@ class CustomerSuccessBalancing
     @customers_amount_by_cs = availables_customers_success.each_with_object([]) do |cs, customers_amount_by_cs|
       customers_amount = customers[customers_index..].take_while { |c| c[:score] <= cs[:score] }.count
 
+      next if customers_amount.zero?
+
       customers_index += customers_amount
 
       customers_amount_by_cs << { cs_id: cs[:id], customers_amount: customers_amount }
