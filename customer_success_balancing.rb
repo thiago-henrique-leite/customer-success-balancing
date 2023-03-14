@@ -3,74 +3,55 @@ require 'timeout'
 
 # ruby-version 3.0.0p0
 class CustomerSuccessBalancing
+  DRAW = 0
+
   def initialize(customers_success, customers, away_customer_success)
-    @customers_success = customers_success
-    @customers = customers
+    @customers_success = customers_success.sort_by { |cs| cs[:score] }
+    @customers = customers.sort_by { |c| c[:score] }
     @away_customer_success = away_customer_success
   end
 
   def execute
-    sort_by_score_in_ascending_order(customers)
-    sort_by_score_in_ascending_order(customers_success)
+    return DRAW if availables_customers_success.blank?
 
-    return 0 if allocable_customers_success.empty?
-
-    calculate_customers_amount_by_customer_success
-
-    return 0 if customers_success_with_most_customers.size > 1
-
-    customers_success_with_most_customers.last[:customer_success_id]
+    calculate_customers_amount_served_per_customer_success
+    find_customer_success_id_serving_most_customers
   end
 
   private
 
   attr_reader :away_customer_success, :customers, :customers_success, :customers_amount_by_cs
 
-  def allocable_customers_success
-    @allocable_customers_success ||= customers_success.reject do |customer_success|
-      customer_success_is_absent?(customer_success[:id]) || customer_success[:score] < lowest_customers_score
+  def availables_customers_success
+    @availables_customers_success ||= customers_success.reject do |cs|
+      away_customer_success.include?(cs[:id]) || cs[:score] < customers.first[:score]
     end
   end
 
-  def calculate_customers_amount_by_customer_success
+  def calculate_customers_amount_served_per_customer_success
     customers_index = 0
 
-    @customers_amount_by_cs = allocable_customers_success.map do |customer_success|
-      customers_amount = 0
+    @customers_amount_by_cs = availables_customers_success.each_with_object([]) do |cs, customers_amount_by_cs|
+      customers_amount = customers[customers_index..].take_while { |c| c[:score] <= cs[:score] }.count
 
-      customers[customers_index..].each do |customer|
-        break if customer[:score] > customer_success[:score]
+      customers_index += customers_amount
 
-        customers_index  += 1
-        customers_amount += 1
-      end
-
-      { customer_success_id: customer_success[:id], customers_amount: customers_amount }
+      customers_amount_by_cs << { cs_id: cs[:id], customers_amount: customers_amount }
     end
   end
 
-  def customer_success_is_absent?(customer_success_id)
-    away_customer_success.include?(customer_success_id)
+  def max_customers_amount_by_cs
+    @max_customers_amount_by_cs ||= customers_amount_by_cs.map { |cs| cs[:customers_amount] }.max
   end
 
-  def customers_success_with_most_customers
-    @customers_success_with_most_customers ||= customers_amount_by_cs.select do |customer_success|
-      customer_success[:customers_amount] == max_customers_amount_by_customer_success
+  def find_customer_success_id_serving_most_customers
+    customers_success_serving_most_customers = customers_amount_by_cs.select do |cs|
+      cs[:customers_amount] == max_customers_amount_by_cs
     end
-  end
 
-  def lowest_customers_score
-    @lowest_customers_score ||= customers.first[:score]
-  end
+    return DRAW if customers_success_serving_most_customers.size > 1
 
-  def max_customers_amount_by_customer_success
-    @max_customers_amount_by_customer_success ||= customers_amount_by_cs.map do |customer_success|
-      customer_success[:customers_amount]
-    end.max
-  end
-
-  def sort_by_score_in_ascending_order(array)
-    array.sort_by! { |element| element[:score] }
+    customers_success_serving_most_customers.last[:cs_id]
   end
 end
 
